@@ -9,15 +9,15 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# OpenAI API key from Render environment variable
+# Set OpenAI API Key from environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# MongoDB connection
+# MongoDB Atlas connection
 client = MongoClient("mongodb+srv://uttam:Uttam68%40@cluster0.etz2rpp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client["index_valley"]
 customers = db["customers"]
 
-# Route 1: Validate Name
+# Route 1: Validate name
 @app.route("/validate_name", methods=["POST"])
 def validate_name():
     data = request.json
@@ -26,14 +26,14 @@ def validate_name():
         return jsonify({"valid": False, "message": "Invalid name format"})
     return jsonify({"valid": True})
 
-# Route 2: Submit user details
+# Route 2: Save user info to MongoDB
 @app.route("/submit_user", methods=["POST"])
 def submit_user():
     data = request.json
     customers.insert_one(data)
     return jsonify({"status": "success"})
 
-# Route 3: Check Loan Eligibility
+# Route 3: Loan eligibility check
 @app.route("/check_eligibility", methods=["POST"])
 def check_eligibility():
     income = float(request.json.get("income", 0))
@@ -46,7 +46,7 @@ def check_eligibility():
     else:
         return jsonify({"eligible": "partial", "message": "May require collateral."})
 
-# Route 4: AI Chat
+# Route 4: AI Chat with OpenAI
 @app.route("/chat", methods=["POST"])
 def chat():
     user_msg = request.json.get("message", "")
@@ -58,9 +58,9 @@ def chat():
                 {
                     "role": "system",
                     "content": (
-                        "You are IndexValley, a smart and friendly AI banking assistant. "
-                        "Answer user questions clearly about loan eligibility, required documents, interest rates, and processes. "
-                        "Avoid overexplaining or asking too many follow-ups. Be direct, concise, and helpful."
+                        "You are IndexValley, a helpful and friendly AI banking assistant. "
+                        "Answer questions about loan eligibility, documents, or process clearly. "
+                        "Avoid overexplaining, be concise."
                     )
                 },
                 {"role": "user", "content": user_msg}
@@ -70,12 +70,13 @@ def chat():
         return jsonify({"reply": bot_reply})
 
     except Exception as e:
-        print("OpenAI Error:", str(e))
-        return jsonify({"reply": "Sorry, I couldn't process that request right now."}), 500
+        print("💥 Error in /chat route:", str(e))
+        return jsonify({"reply": "Sorry, something went wrong."}), 500
 
-# Run server locally
+# Start the app
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 

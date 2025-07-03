@@ -9,7 +9,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Load OpenAI API key from environment variable
+# OpenAI API key from Render environment variable
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # MongoDB connection
@@ -17,7 +17,7 @@ client = MongoClient("mongodb+srv://uttam:Uttam68%40@cluster0.etz2rpp.mongodb.ne
 db = client["index_valley"]
 customers = db["customers"]
 
-# Endpoint 1: Name validation
+# Route 1: Validate Name
 @app.route("/validate_name", methods=["POST"])
 def validate_name():
     data = request.json
@@ -26,14 +26,14 @@ def validate_name():
         return jsonify({"valid": False, "message": "Invalid name format"})
     return jsonify({"valid": True})
 
-# Endpoint 2: Submit user data to MongoDB
+# Route 2: Submit user details
 @app.route("/submit_user", methods=["POST"])
 def submit_user():
     data = request.json
     customers.insert_one(data)
     return jsonify({"status": "success"})
 
-# Endpoint 3: Loan eligibility logic
+# Route 3: Check Loan Eligibility
 @app.route("/check_eligibility", methods=["POST"])
 def check_eligibility():
     income = float(request.json.get("income", 0))
@@ -46,7 +46,7 @@ def check_eligibility():
     else:
         return jsonify({"eligible": "partial", "message": "May require collateral."})
 
-# Endpoint 4: Chatbot (OpenAI integration)
+# Route 4: AI Chat
 @app.route("/chat", methods=["POST"])
 def chat():
     user_msg = request.json.get("message", "")
@@ -59,22 +59,23 @@ def chat():
                     "role": "system",
                     "content": (
                         "You are IndexValley, a smart and friendly AI banking assistant. "
-                        "Help users with loan queries. Ask only essential questions like Aadhaar and income. "
-                        "Answer queries about documents, interest rates, and eligibility clearly. "
-                        "Avoid overexplaining or asking unnecessary questions."
+                        "Answer user questions clearly about loan eligibility, required documents, interest rates, and processes. "
+                        "Avoid overexplaining or asking too many follow-ups. Be direct, concise, and helpful."
                     )
                 },
                 {"role": "user", "content": user_msg}
             ]
         )
-
         bot_reply = response.choices[0].message["content"]
         return jsonify({"reply": bot_reply})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
-# Run app locally
+    except Exception as e:
+        print("OpenAI Error:", str(e))
+        return jsonify({"reply": "Sorry, I couldn't process that request right now."}), 500
+
+# Run server locally
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
